@@ -44,15 +44,15 @@ jobs:
         shell: bash
         run: |
           conan profile detect --force
-          # OIS 1.4.1 derives from std::unary_function, which modern libc++
-          # hides in C++17. Apply the compatibility macro to both ordinary
-          # C++ and Objective-C++ (the Cocoa OIS backend) dependency builds.
+          # Legacy OIS and OGRE use C++17-removed libc++ facilities:
+          # unary_function/binary_function and bind2nd. Restore those APIs for
+          # both C++ and Objective-C++ (the Cocoa OIS backend) dependency builds.
           # OGRE 1.11's framework path emits Xcode-only $(...) placeholders
           # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
           # Pass the policy and option on CMake's command line as cache values:
           # its legacy cmake_dependent_option() otherwise clears normal vars.
           SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
-          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF"]\n' \
+          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF"]\n' \
             "$SDK_PATH" >> "$HOME/.conan2/profiles/default"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
