@@ -8,6 +8,9 @@ find_package(OGRE 1.11 REQUIRED COMPONENTS Bites Overlay Paging RTShaderSystem M
 # --- Object Oriented Input System ---
 find_package(OIS REQUIRED)
 
+# --- MyGUI - graphical user inferface ---
+find_package(MyGUI REQUIRED)
+
 # --- fmt - A modern formatting library  ---
 find_package(fmt REQUIRED)
 
