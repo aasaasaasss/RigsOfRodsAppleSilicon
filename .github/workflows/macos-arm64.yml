@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  CONAN_INSTALL_ARGS: "--build=missing"
+  CONAN_INSTALL_ARGS: "--build=missing -r cloudsmith"
 
 jobs:
   build:
@@ -35,27 +35,26 @@ jobs:
         run: |
           brew install cmake ninja dylibbundler
 
-      - name: Install and configure Conan
+      - name: Install and configure Conan 1.x
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "conan>=2.0,<3"
+          python -m pip install "conan<2"
           conan profile detect --force
+          conan remote add cloudsmith \
+            "https://dl.cloudsmith.io/public/anotherfoxguy/ror-dependencies/conan/" \
+            --force
           echo "--- Conan version ---"
           conan --version
+          echo "--- Conan remotes ---"
+          conan remote list
           echo "--- Conan profile ---"
           conan profile show
 
-      - name: Fetch Conan CMake provider
+      - name: Install Conan dependencies
         shell: bash
         run: |
-          mkdir -p cmake
-          curl --fail --show-error --silent --location \
-            --retry 3 \
-            --output cmake/conan_provider.cmake \
-            "https://raw.githubusercontent.com/conan-io/cmake-conan/develop2/conan_provider.cmake"
-          test -s cmake/conan_provider.cmake
-          echo "conan_provider.cmake: $(wc -c < cmake/conan_provider.cmake | tr -d ' ') bytes"
+          conan install . -of build --build=missing -r cloudsmith
 
       - name: Configure CMake
         shell: bash
@@ -63,7 +62,7 @@ jobs:
           cmake -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="${GITHUB_WORKSPACE}/cmake/conan_provider.cmake" \
+            -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
 
