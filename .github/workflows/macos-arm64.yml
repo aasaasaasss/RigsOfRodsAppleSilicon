@@ -51,8 +51,9 @@ jobs:
           # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
           # Pass the policy and option on CMake's command line as cache values:
           # its legacy cmake_dependent_option() otherwise clears normal vars.
-          printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF"]\n' \
-            >> "$HOME/.conan2/profiles/default"
+          SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
+          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF"]\n' \
+            "$SDK_PATH" >> "$HOME/.conan2/profiles/default"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
             --force
@@ -86,6 +87,20 @@ jobs:
             -e 's|https://sourceforge.net/projects/libpng/files/libpng16/1.6.40/libpng-1.6.40.tar.xz|https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.40.tar.gz|' \
             -e 's|535b479b2467ff231a3ec6d92a525906fb8ef27978be4f66dbe05d3f3a01b3a1|62d25af25e636454b005c93cae51ddcd5383c40fa14aa3dae8f6576feb5692c2|' \
             "$recipe_dir/conandata.yml"
+
+      - name: Preserve Conan SDK path in legacy OGRE recipe
+        shell: bash
+        run: |
+          conan download ogre3d/1.11.6.1@anotherfoxguy/stable \
+            --remote rigs-of-rods-deps \
+            --only-recipe
+          recipe_dir="$(conan cache path ogre3d/1.11.6.1@anotherfoxguy/stable)"
+          # OGRE 1.11 resets CMAKE_OSX_SYSROOT to the Xcode-only name "macosx"
+          # for Ninja. Preserve the full SDK path Conan gets from xcrun instead.
+          perl -0pi -e 's/        get\(self, \*\*self\.conan_data\["sources"\]\[self\.version\], strip_root=True\)\r?\n/        get(self, **self.conan_data["sources"][self.version], strip_root=True)\n        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),\n                        "set(CMAKE_OSX_SYSROOT macosx)",\n                        "# CMake sysroot supplied by Conan toolchain")\n/' \
+            "$recipe_dir/conanfile.py"
+          grep -q 'CMake sysroot supplied by Conan toolchain' \
+            "$recipe_dir/conanfile.py"
 
       - name: Configure CMake
         shell: bash
