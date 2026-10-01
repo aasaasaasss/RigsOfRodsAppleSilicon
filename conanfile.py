@@ -15,7 +15,7 @@ class RoR(ConanFile):
         self.folders.generators = os.path.join(self.folders.build, "generators")
 
     def requirements(self):
-        self.requires("angelscript/2.38.0")
+        # Removed angelscript/2.38.0 - it will be fetched by CMake via FetchContent
         if self.settings.os != "Macos":
             self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
         self.requires("libcurl/8.2.1")
