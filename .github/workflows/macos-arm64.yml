@@ -53,6 +53,10 @@ jobs:
       - name: Configure CMake
         shell: bash
         run: |
+          # Some transitive recipes (for example libpng 1.6.40) still
+          # declare cmake_minimum_required(VERSION 3.5). CMake 4 requires
+          # this compatibility floor when Conan builds those recipes.
+          export CMAKE_POLICY_VERSION_MINIMUM=3.5
           cmake -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
