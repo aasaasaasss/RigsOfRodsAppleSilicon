@@ -1,0 +1,37 @@
+name: macOS arm64 Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: macos-14 # Apple Silicon runners
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Environment
+        run: |
+          brew install cmake ninja
+          pip3 install conan
+          conan profile detect --force
+          
+      - name: Build Rigs of Rods
+        run: |
+          mkdir build && cd build
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+          ninja
+          
+      - name: Package App Bundle
+        run: |
+          cd build
+          chmod +x ../deployment/bundle.sh
+          ../deployment/bundle.sh
+          
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: RigsOfRods-macOS-arm64
+          path: build/RigsOfRods.app

@@ -1,0 +1,27 @@
+--- source/main/AppContext.cpp
++++ source/main/AppContext.cpp
+@@ -35,6 +35,10 @@
+ #include <OgreResourceGroupManager.h>
+ #include <OgreConfigPaths.h>
+ 
++#if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
++#include "MacOS.h"
++#endif
++
+ using namespace RoR;
+ 
+ AppContext::AppContext() :
+@@ -560,6 +564,13 @@
+         process_dir = "/usr/share/rigsofrods/resources/";
+     }
+ #endif
++#if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
++    std::string bundle_res = RoR::MacOS::GetBundleResourcesDir();
++    if (!bundle_res.empty())
++    {
++        process_dir = bundle_res;
++    }
++#endif
+     if (!FolderExists(process_dir))
+     {
+         ErrorUtils::ShowError(_L("Startup error"), _L("Resources folder not found. Check if correctly installed."));

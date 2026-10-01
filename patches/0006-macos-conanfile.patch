@@ -1,0 +1,17 @@
+--- conanfile.py
++++ conanfile.py
+@@ -16,7 +16,8 @@
+ 
+     def requirements(self):
+         self.requires("angelscript/2.38.0")
+-        self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
++        if self.settings.os != "Macos":
++            self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
+         self.requires("libcurl/8.2.1")
+         self.requires("fmt/12.2.0")
+         self.requires("mygui/3.4.0@anotherfoxguy/stable")
+@@ -46,3 +47,4 @@
+         bindir = os.path.join(self.build_folder, "bin")
+         copy(self, "*.dll", src, bindir, False)
+         copy(self, "*.so*", src, bindir, False)
++        copy(self, "*.dylib", src, bindir, False)
