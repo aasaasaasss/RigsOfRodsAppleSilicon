@@ -62,9 +62,9 @@ jobs:
           for patch in patches/0*.patch; do
             [ -f "$patch" ] || continue
             echo "  Checking: $(basename "$patch")"
-            git apply --check "$patch" \
+            git apply -p1 --check "$patch" \
               || { echo "FATAL: Patch pre-check failed: $patch"; exit 1; }
-            git apply "$patch" \
+            git apply -p1 "$patch" \
               || { echo "FATAL: Patch apply failed: $patch"; exit 1; }
             echo "  ✓ Applied: $(basename "$patch")"
             PATCH_COUNT=$((PATCH_COUNT + 1))
