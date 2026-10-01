@@ -1,8 +1,8 @@
 --- source/main/AppContext.cpp
 +++ source/main/AppContext.cpp
-@@ -35,6 +35,10 @@
- #include <OgreResourceGroupManager.h>
- #include <OgreConfigPaths.h>
+@@ -55,6 +55,10 @@
+ #include <string>
+ #include <ctime>
  
 +#if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
 +#include "MacOS.h"
@@ -10,8 +10,8 @@
 +
  using namespace RoR;
  
- AppContext::AppContext() :
-@@ -560,6 +564,13 @@
+ // --------------------------
+@@ -563,6 +567,13 @@
          process_dir = "/usr/share/rigsofrods/resources/";
      }
  #endif

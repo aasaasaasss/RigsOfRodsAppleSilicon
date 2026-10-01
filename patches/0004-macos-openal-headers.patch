@@ -1,22 +1,18 @@
 --- source/main/audio/Sound.h
 +++ source/main/audio/Sound.h
-@@ -26,10 +26,10 @@
+@@ -26,7 +26,7 @@
+ #include "RefCountingObject.h"
  
  #ifdef __APPLE__
--  #include <OpenAL/al.h>
--  #include <OpenAL/alc.h>
--  #include <OpenAL/alext.h>
--  #include <OpenAL/efx-presets.h>
-+  #include <AL/al.h>
-+  #include <AL/alc.h>
-+  #include <AL/alext.h>
-+  #include <AL/efx-presets.h>
+-#   include <OpenAL/al.h>
++#   include <AL/al.h>
  #else
-   #include <AL/al.h>
-   #include <AL/alc.h>
+ #   include <AL/al.h>
+ #endif // __APPLE__
 --- source/main/audio/SoundManager.h
 +++ source/main/audio/SoundManager.h
 @@ -34,10 +34,10 @@
+ #include <OgreString.h>
  
  #ifdef __APPLE__
 -  #include <OpenAL/al.h>
