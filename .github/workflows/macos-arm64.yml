@@ -55,6 +55,21 @@ jobs:
 
           conan remote list
 
+      - name: Patch legacy FreeImage source mirror
+        shell: bash
+        run: |
+          # SourceForge currently returns HTTP 522 for this archived release.
+          # Keep the existing recipe and patches, but fetch the identical 3.18.0
+          # release tree from the maintained MonoGame mirror instead.
+          conan download freeimage/3.18.0@anotherfoxguy/stable \
+            --remote rigs-of-rods-deps \
+            --only-recipe
+          recipe_dir="$(conan cache path freeimage/3.18.0@anotherfoxguy/stable)"
+          sed -i '' \
+            -e 's|http://downloads.sourceforge.net/project/freeimage/Source%20Distribution/3.18.0/FreeImage3180.zip|https://codeload.github.com/MonoGame/MonoGame.Mirror.FreeImage/zip/refs/tags/3.18.0|' \
+            -e 's|f41379682f9ada94ea7b34fe86bf9ee00935a3147be41b6569c9605a53e438fd|2ea4d07c0c88896d2f208a5e3648c026517894820465402698fea40bd7802b51|' \
+            "$recipe_dir/conandata.yml"
+
       - name: Configure CMake
         shell: bash
         run: |
