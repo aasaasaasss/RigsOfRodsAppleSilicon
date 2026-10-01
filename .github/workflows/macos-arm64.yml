@@ -49,7 +49,9 @@ jobs:
           # C++ and Objective-C++ (the Cocoa OIS backend) dependency builds.
           # OGRE 1.11's framework path emits Xcode-only $(...) placeholders
           # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
-          printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION","OGRE_BUILD_LIBS_AS_FRAMEWORKS":"OFF"}\n' \
+          # CMP0077=NEW keeps that explicit OFF option from being cleared by
+          # OGRE's legacy cmake_dependent_option() calls.
+          printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION","CMAKE_POLICY_DEFAULT_CMP0077":"NEW","OGRE_BUILD_LIBS_AS_FRAMEWORKS":"OFF"}\n' \
             >> "$HOME/.conan2/profiles/default"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
