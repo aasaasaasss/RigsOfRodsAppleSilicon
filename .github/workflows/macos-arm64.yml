@@ -43,6 +43,56 @@ jobs:
         shell: bash
         run: |
           conan profile new default --detect --force
+          conan remote remove conancenter || true
+          conan remote add conancenter https://conan.bintray.com
+          conan remote add cloudsmith \
+            "https://dl.cloudsmith.io/public/anotherfoxguy/ror-dependencies/conan/" \
+            --force
+          conan remote list
+
+      - name: Install dependencies with Conan
+        shell: bash
+        run: |
+          conan install . -of build --build=missing
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+
+      - name: Build
+        shell: bash
+        run: |
+          cmake --build build \
+            --config Release \
+            --parallel "$(sysctl -n hw.ncpu)"
+
+      - name: Package App Bundle
+        shell: bash
+        run: |
+          chmod +x tools/macos/bundle.sh
+          tools/macos/bundle.sh build
+
+      - name: Upload App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: RigsOfRods-macOS-arm64
+          path: build/RigsOfRods.app
+          compression-level: 9
+          if-no-files-found: error        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "conan<2"
+          conan --version
+
+      - name: Setup Conan remotes
+        shell: bash
+        run: |
+          conan profile new default --detect --force
           conan remote remove conancenter
           conan remote add conancenter https://center.conan.io
           conan remote add cloudsmith \
