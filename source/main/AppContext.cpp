@@ -598,6 +598,10 @@ bool AppContext::SetUpResourcesDir()
     if (!bundle_res.empty())
     {
         process_dir = bundle_res;
+        // The app bundle keeps game data and plugins in Contents/Resources.
+        // From this point onward, legacy paths based on sys_process_dir must
+        // resolve there instead of beside the Mach-O executable (Contents/MacOS).
+        App::sys_process_dir->setStr(bundle_res);
     }
 #endif
     if (!FolderExists(process_dir))

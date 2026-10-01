@@ -122,14 +122,13 @@ echo "[4/7] $PLUGIN_COUNT OGRE plugin(s) staged into PlugIns/"
 #    -od  : overwrite destination directory if it exists
 #    -b   : bundle dependencies into the destination
 #    -of  : overwrite files at destination
-#    -i   : ignore/exclude paths from relinking (system & Homebrew)
+#    -i   : ignore/exclude paths from relinking (Apple system libraries)
 # ──────────────────────────────────────────────────────────────────
 DYLIBBUNDLER_ARGS=(
     -od -b -of
     -x "$APP_DIR/Contents/MacOS/$EXECUTABLE"
     -d "$APP_DIR/Contents/Frameworks"
     -p "@executable_path/../Frameworks/"
-    -i /opt/homebrew
     -i /Library/Frameworks
     -i /System/Library
     -i /usr/lib
@@ -170,13 +169,13 @@ SIGN_COUNT=0
 
 echo "  Signing layer 1: Frameworks..."
 while IFS= read -r -d '' fw; do
-    codesign --force --sign - --timestamp=none "$fw" 2>/dev/null || true
+    codesign --force --sign - --timestamp=none "$fw"
     SIGN_COUNT=$((SIGN_COUNT + 1))
 done < <(find "$APP_DIR/Contents/Frameworks" -maxdepth 1 \( -name '*.dylib' -o -name '*.framework' \) -print0 2>/dev/null)
 
 echo "  Signing layer 2: PlugIns..."
 while IFS= read -r -d '' pl; do
-    codesign --force --sign - --timestamp=none "$pl" 2>/dev/null || true
+    codesign --force --sign - --timestamp=none "$pl"
     SIGN_COUNT=$((SIGN_COUNT + 1))
 done < <(find "$APP_DIR/Contents/PlugIns" -maxdepth 1 -name '*.dylib' -print0 2>/dev/null)
 
@@ -193,11 +192,8 @@ echo "[6/7] Code signing complete ($SIGN_COUNT objects signed)"
 # ──────────────────────────────────────────────────────────────────
 # 8. Final verification
 # ──────────────────────────────────────────────────────────────────
-if codesign --verify --deep --strict "$APP_DIR" 2>/dev/null; then
-    echo "[7/7] Bundle signature verification PASSED"
-else
-    echo "[7/7] WARNING: Deep signature verification returned non-zero (expected for ad-hoc on CI)"
-fi
+codesign --verify --deep --strict "$APP_DIR"
+echo "[7/7] Bundle signature verification PASSED"
 
 echo ""
 echo "=============================================="
