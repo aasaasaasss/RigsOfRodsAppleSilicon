@@ -97,9 +97,14 @@ jobs:
           recipe_dir="$(conan cache path ogre3d/1.11.6.1@anotherfoxguy/stable)"
           # OGRE 1.11 resets CMAKE_OSX_SYSROOT to the Xcode-only name "macosx"
           # for Ninja. Preserve the full SDK path Conan gets from xcrun instead.
-          perl -0pi -e 's/        get\(self, \*\*self\.conan_data\["sources"\]\[self\.version\], strip_root=True\)\r?\n/        get(self, **self.conan_data["sources"][self.version], strip_root=True)\n        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),\n                        "set(CMAKE_OSX_SYSROOT macosx)",\n                        "# CMake sysroot supplied by Conan toolchain")\n/' \
+          perl -0pi -e 's/        get\(self, \*\*self\.conan_data\["sources"\]\[self\.version\], strip_root=True\)\r?\n/        get(self, **self.conan_data["sources"][self.version], strip_root=True)\n        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),\n                        "set(CMAKE_OSX_SYSROOT macosx)",\n                        "# CMake sysroot supplied by Conan toolchain")\n        replace_in_file(self, os.path.join(self.source_folder, "OgreMain/include/OgrePlatformInformation.h"),\n                        "#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE\\n#   define OGRE_CPU OGRE_CPU_X86",\n                        "#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && (defined(__i386__) || defined(__x86_64__))\\n#   define OGRE_CPU OGRE_CPU_X86")\n/' \
             "$recipe_dir/conanfile.py"
+          # OGRE 1.11's platform header treats every non-big-endian Apple
+          # target as x86 before it checks __aarch64__, enabling SSE on arm64.
+          # Restrict that legacy Apple fallback to actual Intel architectures.
           grep -q 'CMake sysroot supplied by Conan toolchain' \
+            "$recipe_dir/conanfile.py"
+          grep -q 'defined(__i386__) || defined(__x86_64__)' \
             "$recipe_dir/conanfile.py"
 
       - name: Configure CMake
