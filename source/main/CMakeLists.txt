@@ -272,6 +272,11 @@ include(SourceFileUtils)
 # Expand file extensions (i.e. path/to/file.{h,cpp} becomes path/to/file.h;path/to/file.cpp)
 expand_file_extensions(SOURCE_FILES ${SOURCE_FILES})
 
+if (APPLE)
+    list(APPEND SOURCE_FILES MacOS.h MacOS.mm)
+    set_source_files_properties(MacOS.mm PROPERTIES COMPILE_FLAGS "-fno-objc-arc")
+endif ()
+
 # Generate source groups for use in IDEs
 source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${SOURCE_FILES})
 
@@ -409,6 +414,8 @@ target_include_directories(${BINNAME} PRIVATE
 
 if (WIN32)
     set(OS_LIBS "Ws2_32")
+elseif (APPLE)
+    set(OS_LIBS "-framework Cocoa -framework IOKit -framework AppKit")
 else ()
     #  include_directories(${GTK_INCLUDE_DIRS})
     set(OS_LIBS "X11 -l${CMAKE_DL_LIBS} -lrt")

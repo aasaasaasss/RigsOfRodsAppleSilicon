@@ -54,26 +54,6 @@ jobs:
           echo "--- Conan profile ---"
           conan profile show
 
-      # ── Apply macOS patches ───────────────────────────────────
-      - name: Apply macOS arm64 patches (0001–0009)
-        run: |
-          echo "=== Applying macOS arm64 patch set ==="
-          PATCH_COUNT=0
-          for patch in patches/0*.patch; do
-            [ -f "$patch" ] || continue
-            echo "  Checking: $(basename "$patch")"
-            git apply -p0 --check "$patch" \
-              || { echo "FATAL: Patch pre-check failed: $patch"; exit 1; }
-            git apply -p0 "$patch" \
-              || { echo "FATAL: Patch apply failed: $patch"; exit 1; }
-            echo "  ✓ Applied: $(basename "$patch")"
-            PATCH_COUNT=$((PATCH_COUNT + 1))
-          done
-          if [ "$PATCH_COUNT" -lt 9 ]; then
-            echo "FATAL: Expected 9 patches but only applied $PATCH_COUNT"
-            exit 1
-          fi
-          echo "=== All $PATCH_COUNT patches applied successfully ==="
 
       # ── Conan CMake dependency provider ───────────────────────
       - name: Fetch conan_provider.cmake
