@@ -47,7 +47,9 @@ jobs:
           # OIS 1.4.1 derives from std::unary_function, which modern libc++
           # hides in C++17. Apply the compatibility macro to both ordinary
           # C++ and Objective-C++ (the Cocoa OIS backend) dependency builds.
-          printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"}\n' \
+          # OGRE 1.11's framework path emits Xcode-only $(...) placeholders
+          # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
+          printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION","OGRE_BUILD_LIBS_AS_FRAMEWORKS":"OFF"}\n' \
             >> "$HOME/.conan2/profiles/default"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
