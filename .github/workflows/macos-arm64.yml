@@ -33,6 +33,16 @@ jobs:
         run: |
           brew install cmake ninja dylibbundler
 
+      - name: Build AngelScript
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/AnotherFoxGuy/angelscript.git angelscript
+          cmake -S angelscript -B angelscript/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/angelscript"
+          cmake --build angelscript/build --parallel "$(sysctl -n hw.ncpu)"
+          cmake --install angelscript/build
+
       - name: Install Conan 2
         shell: bash
         run: |
@@ -120,6 +130,7 @@ jobs:
             -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=cmake/conan_provider.cmake \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/angelscript" \
             -DROR_USE_CAELUM=OFF
 
       - name: Build
