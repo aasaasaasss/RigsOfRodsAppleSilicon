@@ -70,6 +70,19 @@ jobs:
             -e 's|f41379682f9ada94ea7b34fe86bf9ee00935a3147be41b6569c9605a53e438fd|2ea4d07c0c88896d2f208a5e3648c026517894820465402698fea40bd7802b51|' \
             "$recipe_dir/conandata.yml"
 
+      - name: Patch legacy libpng source mirror
+        shell: bash
+        run: |
+          # SourceForge also serves this archived libpng release unreliably.
+          # GitHub's official PNG Group tag has the same source tree, while
+          # retaining a .tar.gz suffix lets Conan select the correct unpacker.
+          conan download libpng/1.6.40 --remote conancenter --only-recipe
+          recipe_dir="$(conan cache path libpng/1.6.40)"
+          sed -i '' \
+            -e 's|https://sourceforge.net/projects/libpng/files/libpng16/1.6.40/libpng-1.6.40.tar.xz|https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.40.tar.gz|' \
+            -e 's|535b479b2467ff231a3ec6d92a525906fb8ef27978be4f66dbe05d3f3a01b3a1|62d25af25e636454b005c93cae51ddcd5383c40fa14aa3dae8f6576feb5692c2|' \
+            "$recipe_dir/conandata.yml"
+
       - name: Configure CMake
         shell: bash
         run: |
