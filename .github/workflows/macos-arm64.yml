@@ -48,6 +48,9 @@ jobs:
           # that C++17-removed compatibility type unless this is requested.
           printf '\n[conf]\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION"]\n' \
             >> "$HOME/.conan2/profiles/default"
+          # Conan builds legacy recipes with CMake 4 from its tool requirements.
+          # Keep their pre-3.5 cmake_minimum_required() calls compatible.
+          echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> "$GITHUB_ENV"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
             --force
