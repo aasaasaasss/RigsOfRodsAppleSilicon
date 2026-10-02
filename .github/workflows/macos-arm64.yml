@@ -39,6 +39,7 @@ jobs:
           git clone --depth 1 https://github.com/AnotherFoxGuy/angelscript.git angelscript
           cmake -S angelscript -B angelscript/build \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=11 \
             -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/angelscript"
           cmake --build angelscript/build --parallel "$(sysctl -n hw.ncpu)"
           cmake --install angelscript/build
