@@ -39,12 +39,23 @@
 find_path(MyGUI_INCLUDE_DIR MyGUI.h PATH_SUFFIXES MYGUI)
 
 # Find release libraries
-find_library(MyGUI_MyGUIEngine_LIBRARY_REL MyGUIEngine PATH_SUFFIXES release relwithdebinfo minsizerel)
-find_library(MyGUI_OgrePlatform_LIBRARY_REL MyGUI.OgrePlatform PATH_SUFFIXES release relwithdebinfo minsizerel)
+get_filename_component(MyGUI_INCLUDE_PARENT "${MyGUI_INCLUDE_DIR}" DIRECTORY)
+get_filename_component(MyGUI_PACKAGE_ROOT "${MyGUI_INCLUDE_PARENT}" DIRECTORY)
+
+find_library(MyGUI_MyGUIEngine_LIBRARY_REL NAMES MyGUIEngine
+        PATHS "${MyGUI_PACKAGE_ROOT}/lib" "${MyGUI_PACKAGE_ROOT}/lib/Release" "${MyGUI_PACKAGE_ROOT}/lib/release"
+        NO_DEFAULT_PATH)
+find_library(MyGUI_OgrePlatform_LIBRARY_REL NAMES MyGUI.OgrePlatform
+        PATHS "${MyGUI_PACKAGE_ROOT}/lib" "${MyGUI_PACKAGE_ROOT}/lib/Release" "${MyGUI_PACKAGE_ROOT}/lib/release"
+        NO_DEFAULT_PATH)
 
 # Find debug libraries
-find_library(MyGUI_MyGUIEngine_LIBRARY_DBG NAMES MyGUIEngine_d MyGUIEngine PATH_SUFFIXES debug)
-find_library(MyGUI_OgrePlatform_LIBRARY_DBG NAMES MyGUI.OgrePlatform_d MyGUI.OgrePlatform PATH_SUFFIXES debug)
+find_library(MyGUI_MyGUIEngine_LIBRARY_DBG NAMES MyGUIEngine_d MyGUIEngine
+        PATHS "${MyGUI_PACKAGE_ROOT}/lib/Debug" "${MyGUI_PACKAGE_ROOT}/lib/debug" "${MyGUI_PACKAGE_ROOT}/lib"
+        NO_DEFAULT_PATH)
+find_library(MyGUI_OgrePlatform_LIBRARY_DBG NAMES MyGUI.OgrePlatform_d MyGUI.OgrePlatform
+        PATHS "${MyGUI_PACKAGE_ROOT}/lib/Debug" "${MyGUI_PACKAGE_ROOT}/lib/debug" "${MyGUI_PACKAGE_ROOT}/lib"
+        NO_DEFAULT_PATH)
 
 # set include directories and libraries
 set(MyGUI_INCLUDE_DIRS ${MyGUI_INCLUDE_DIR})
@@ -58,7 +69,7 @@ endif ()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(MyGUI FOUND_VAR MyGUI_FOUND
-        REQUIRED_VARS MyGUI_INCLUDE_DIRS MyGUI_LIBRARIES
+        REQUIRED_VARS MyGUI_INCLUDE_DIR MyGUI_MyGUIEngine_LIBRARY_REL MyGUI_OgrePlatform_LIBRARY_REL
         )
 
 if (MyGUI_FOUND)
