@@ -36,6 +36,7 @@
 
 #include <OgreLight.h>
 #include <Terrain/OgreTerrainGroup.h>
+#include <Terrain/OgreTerrainMaterialGeneratorA.h>
 
 using namespace Ogre;
 using namespace RoR;
@@ -427,10 +428,18 @@ void TerrainGeometryManager::configureTerrainDefaults()
 
     TerrainGlobalOptions* terrainOptions = TerrainGlobalOptions::getSingletonPtr();
     std::string const & custom_mat = terrainManager->GetDef()->custom_material_name;
+    const bool useOpenGL = Root::getSingleton().getRenderSystem()->getName() == "OpenGL Rendering Subsystem";
     if (!custom_mat.empty())
     {
         terrainOptions->setDefaultMaterialGenerator(
             Ogre::TerrainMaterialGeneratorPtr(new Terrn2CustomMaterial(custom_mat, false, true)));
+    }
+    else if (useOpenGL)
+    {
+        // The RoR PSSM generator has no GLSL shader implementation. Use OGRE's
+        // GLSL-capable terrain generator for OpenGL render systems.
+        terrainOptions->setDefaultMaterialGenerator(
+            Ogre::TerrainMaterialGeneratorPtr(new Ogre::TerrainMaterialGeneratorA()));
     }
     else
     {
@@ -462,28 +471,40 @@ void TerrainGeometryManager::configureTerrainDefaults()
 
     // optimizations
     TerrainPSSMMaterialGenerator::SM2Profile* matProfile = nullptr;
+    bool terrainReceivesDynamicShadows = false;
     if (custom_mat.empty())
     {
-        matProfile = static_cast<TerrainPSSMMaterialGenerator::SM2Profile*>(terrainOptions->getDefaultMaterialGenerator()->getActiveProfile());
-        if (matProfile)
+        if (useOpenGL)
         {
-            matProfile->setLightmapEnabled(m_spec->lightmap_enabled);
-            // Fix for OpenGL, otherwise terrains are black
-            if (Root::getSingleton().getRenderSystem()->getName() == "OpenGL Rendering Subsystem")
+            auto* glProfile = static_cast<TerrainMaterialGeneratorA::SM2Profile*>(
+                terrainOptions->getDefaultMaterialGenerator()->getActiveProfile());
+            if (glProfile)
             {
-                matProfile->setLayerNormalMappingEnabled(true);
-                matProfile->setLayerSpecularMappingEnabled(true);
+                glProfile->setLightmapEnabled(m_spec->lightmap_enabled);
+                glProfile->setLayerNormalMappingEnabled(true);
+                glProfile->setLayerSpecularMappingEnabled(true);
+                glProfile->setLayerParallaxMappingEnabled(m_spec->parallax_enabled);
+                glProfile->setGlobalColourMapEnabled(m_spec->global_colormap_enabled);
+                glProfile->setReceiveDynamicShadowsDepth(m_spec->recv_dyn_shadows_depth);
+                terrainManager->getShadowManager()->updateTerrainMaterial(glProfile);
+                terrainReceivesDynamicShadows = glProfile->getReceiveDynamicShadowsPSSM() != nullptr;
             }
-            else
+        }
+        else
+        {
+            matProfile = static_cast<TerrainPSSMMaterialGenerator::SM2Profile*>(terrainOptions->getDefaultMaterialGenerator()->getActiveProfile());
+            if (matProfile)
             {
+                matProfile->setLightmapEnabled(m_spec->lightmap_enabled);
                 matProfile->setLayerNormalMappingEnabled(m_spec->norm_map_enabled);
                 matProfile->setLayerSpecularMappingEnabled(m_spec->spec_map_enabled);
-            }
-            matProfile->setLayerParallaxMappingEnabled(m_spec->parallax_enabled);
-            matProfile->setGlobalColourMapEnabled(m_spec->global_colormap_enabled);
-            matProfile->setReceiveDynamicShadowsDepth(m_spec->recv_dyn_shadows_depth);
+                matProfile->setLayerParallaxMappingEnabled(m_spec->parallax_enabled);
+                matProfile->setGlobalColourMapEnabled(m_spec->global_colormap_enabled);
+                matProfile->setReceiveDynamicShadowsDepth(m_spec->recv_dyn_shadows_depth);
 
-            terrainManager->getShadowManager()->updateTerrainMaterial(matProfile);
+                terrainManager->getShadowManager()->updateTerrainMaterial(matProfile);
+                terrainReceivesDynamicShadows = matProfile->getReceiveDynamicShadowsPSSM() != nullptr;
+            }
         }
     }
 
@@ -493,12 +514,9 @@ void TerrainGeometryManager::configureTerrainDefaults()
     terrainOptions->setSkirtSize           (m_spec->skirt_size);
     terrainOptions->setLightMapSize        (m_spec->lightmap_size);
 
-    if (custom_mat.empty())
+    if (terrainReceivesDynamicShadows)
     {
-        if (matProfile->getReceiveDynamicShadowsPSSM())
-        {
-            terrainOptions->setCastsDynamicShadows(true);
-        }
+        terrainOptions->setCastsDynamicShadows(true);
     }
 
     terrainOptions->setUseRayBoxDistanceCalculation(false);
