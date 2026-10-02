@@ -60,10 +60,10 @@ jobs:
           # for both C++ and Objective-C++ dependency builds.
           # OGRE 1.11's framework path emits Xcode-only $(...) placeholders
           # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
-          # Pass the policy and option on CMake's command line as cache values:
+          # Pass the policy and options on CMake's command line as cache values:
           # its legacy cmake_dependent_option() otherwise clears normal vars.
           SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
-          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF","-DOGRE_BUILD_PLUGIN_CG=OFF"]\n' \
+          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF","-DOGRE_BUILD_PLUGIN_CG=OFF","-DOGRE_BUILD_RENDERSYSTEM_GL=OFF","-DOGRE_BUILD_RENDERSYSTEM_GL3PLUS=ON"]\n' \
             "$SDK_PATH" >> "$HOME/.conan2/profiles/default"
           conan remote add rigs-of-rods-deps \
             "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \

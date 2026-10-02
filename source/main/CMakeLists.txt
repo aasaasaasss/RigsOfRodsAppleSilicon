@@ -505,12 +505,18 @@ if (APPLE)
     set(CFG_COMMENT_PLUGIN_CG "# ")
 endif ()
 
-if (WIN32)
+if (WIN32 OR APPLE)
     set(CFG_COMMENT_RENDERSYSTEM_GL "# ")
 endif ()
 
 set(CFG_COMMENT_RENDERSYSTEM_D3D11 "# ")
-set(CFG_COMMENT_RENDERSYSTEM_GL3PLUS "# ")
+if (APPLE)
+    # The legacy Cocoa GL renderer creates a 2.1 context that cannot compile
+    # OGRE's generated terrain shaders. Use the GL3+ renderer on macOS.
+    set(CFG_COMMENT_RENDERSYSTEM_GL3PLUS "")
+else ()
+    set(CFG_COMMENT_RENDERSYSTEM_GL3PLUS "# ")
+endif ()
 
 if (DEFINED OGRE_PLUGIN_DIR AND NOT WIN32)
     set(PLUGINS_FOLDER "${OGRE_PLUGIN_DIR}")
