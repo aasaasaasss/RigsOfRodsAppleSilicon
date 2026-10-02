@@ -36,25 +36,60 @@
 # * MyGUI::OgrePlatform
 #
 
-find_path(MyGUI_INCLUDE_DIR MyGUI.h PATH_SUFFIXES MYGUI)
+# Conan's CMakeDeps config is where the package prefix is recorded. The
+# generated target metadata is incomplete for some versions of this legacy
+# recipe, but its config file still exposes the actual package directory.
+find_package(MyGUI CONFIG QUIET)
+
+set(_MyGUI_PACKAGE_ROOTS
+        "${MyGUI_PACKAGE_FOLDER_RELEASE}"
+        "${MyGUI_PACKAGE_FOLDER_DEBUG}"
+        "${mygui_PACKAGE_FOLDER_RELEASE}"
+        "${mygui_PACKAGE_FOLDER_DEBUG}"
+)
+list(REMOVE_ITEM _MyGUI_PACKAGE_ROOTS "")
+
+set(_MyGUI_INCLUDE_HINTS)
+foreach(_root IN LISTS _MyGUI_PACKAGE_ROOTS)
+    list(APPEND _MyGUI_INCLUDE_HINTS
+            "${_root}/include"
+            "${_root}/lib/Release/MyGUIEngine.framework/Headers"
+            "${_root}/lib/Debug/MyGUIEngine.framework/Headers")
+endforeach()
+find_path(MyGUI_INCLUDE_DIR MyGUI.h
+        HINTS ${_MyGUI_INCLUDE_HINTS}
+        PATH_SUFFIXES MYGUI)
 
 # Find release libraries
 get_filename_component(MyGUI_INCLUDE_PARENT "${MyGUI_INCLUDE_DIR}" DIRECTORY)
 get_filename_component(MyGUI_PACKAGE_ROOT "${MyGUI_INCLUDE_PARENT}" DIRECTORY)
 
+set(_MyGUI_RELEASE_LIBRARY_PATHS)
+set(_MyGUI_DEBUG_LIBRARY_PATHS)
+foreach(_root IN LISTS _MyGUI_PACKAGE_ROOTS)
+    list(APPEND _MyGUI_RELEASE_LIBRARY_PATHS
+            "${_root}/lib" "${_root}/lib/Release" "${_root}/lib/release")
+    list(APPEND _MyGUI_DEBUG_LIBRARY_PATHS
+            "${_root}/lib/Debug" "${_root}/lib/debug" "${_root}/lib")
+endforeach()
+list(APPEND _MyGUI_RELEASE_LIBRARY_PATHS
+        "${MyGUI_PACKAGE_ROOT}/lib" "${MyGUI_PACKAGE_ROOT}/lib/Release" "${MyGUI_PACKAGE_ROOT}/lib/release")
+list(APPEND _MyGUI_DEBUG_LIBRARY_PATHS
+        "${MyGUI_PACKAGE_ROOT}/lib/Debug" "${MyGUI_PACKAGE_ROOT}/lib/debug" "${MyGUI_PACKAGE_ROOT}/lib")
+
 find_library(MyGUI_MyGUIEngine_LIBRARY_REL NAMES MyGUIEngine
-        PATHS "${MyGUI_PACKAGE_ROOT}/lib" "${MyGUI_PACKAGE_ROOT}/lib/Release" "${MyGUI_PACKAGE_ROOT}/lib/release"
+        PATHS ${_MyGUI_RELEASE_LIBRARY_PATHS}
         NO_DEFAULT_PATH)
 find_library(MyGUI_OgrePlatform_LIBRARY_REL NAMES MyGUI.OgrePlatform
-        PATHS "${MyGUI_PACKAGE_ROOT}/lib" "${MyGUI_PACKAGE_ROOT}/lib/Release" "${MyGUI_PACKAGE_ROOT}/lib/release"
+        PATHS ${_MyGUI_RELEASE_LIBRARY_PATHS}
         NO_DEFAULT_PATH)
 
 # Find debug libraries
 find_library(MyGUI_MyGUIEngine_LIBRARY_DBG NAMES MyGUIEngine_d MyGUIEngine
-        PATHS "${MyGUI_PACKAGE_ROOT}/lib/Debug" "${MyGUI_PACKAGE_ROOT}/lib/debug" "${MyGUI_PACKAGE_ROOT}/lib"
+        PATHS ${_MyGUI_DEBUG_LIBRARY_PATHS}
         NO_DEFAULT_PATH)
 find_library(MyGUI_OgrePlatform_LIBRARY_DBG NAMES MyGUI.OgrePlatform_d MyGUI.OgrePlatform
-        PATHS "${MyGUI_PACKAGE_ROOT}/lib/Debug" "${MyGUI_PACKAGE_ROOT}/lib/debug" "${MyGUI_PACKAGE_ROOT}/lib"
+        PATHS ${_MyGUI_DEBUG_LIBRARY_PATHS}
         NO_DEFAULT_PATH)
 
 # set include directories and libraries
@@ -73,19 +108,24 @@ find_package_handle_standard_args(MyGUI FOUND_VAR MyGUI_FOUND
         )
 
 if (MyGUI_FOUND)
-    add_library(MyGUI::MyGUI INTERFACE IMPORTED)
-    set_target_properties(MyGUI::MyGUI PROPERTIES
-            INTERFACE_LINK_LIBRARIES
-            "$<$<CONFIG:Debug>:${MyGUI_MyGUIEngine_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_MyGUIEngine_LIBRARY_REL}>"
-            INTERFACE_INCLUDE_DIRECTORIES "${MyGUI_INCLUDE_DIRS}"
-            )
-    add_library(MyGUI::OgrePlatform INTERFACE IMPORTED)
-    set_target_properties(MyGUI::OgrePlatform PROPERTIES
-            INTERFACE_LINK_LIBRARIES
-            "$<$<CONFIG:Debug>:${MyGUI_OgrePlatform_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_OgrePlatform_LIBRARY_REL}>"
-            INTERFACE_INCLUDE_DIRECTORIES "${MyGUI_INCLUDE_DIRS}"
-            )
-    set_property(TARGET MyGUI::OgrePlatform APPEND PROPERTY INTERFACE_LINK_LIBRARIES MyGUI::MyGUI)
+    if (NOT TARGET MyGUI::MyGUI)
+        add_library(MyGUI::MyGUI INTERFACE IMPORTED)
+        set_target_properties(MyGUI::MyGUI PROPERTIES
+                INTERFACE_LINK_LIBRARIES
+                "$<$<CONFIG:Debug>:${MyGUI_MyGUIEngine_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_MyGUIEngine_LIBRARY_REL}>"
+                INTERFACE_INCLUDE_DIRECTORIES "${MyGUI_INCLUDE_DIRS}")
+    endif()
+    if (NOT TARGET MyGUI::OgrePlatform)
+        add_library(MyGUI::OgrePlatform INTERFACE IMPORTED)
+        set_target_properties(MyGUI::OgrePlatform PROPERTIES
+                INTERFACE_LINK_LIBRARIES
+                "$<$<CONFIG:Debug>:${MyGUI_OgrePlatform_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_OgrePlatform_LIBRARY_REL}>"
+                INTERFACE_INCLUDE_DIRECTORIES "${MyGUI_INCLUDE_DIRS}")
+    endif()
+    set_property(TARGET MyGUI::MyGUI APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+            "$<$<CONFIG:Debug>:${MyGUI_MyGUIEngine_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_MyGUIEngine_LIBRARY_REL}>")
+    set_property(TARGET MyGUI::OgrePlatform APPEND PROPERTY INTERFACE_LINK_LIBRARIES
+            "$<$<CONFIG:Debug>:${MyGUI_OgrePlatform_LIBRARY_DBG}>$<$<NOT:$<CONFIG:Debug>>:${MyGUI_OgrePlatform_LIBRARY_REL}>;MyGUI::MyGUI")
 endif ()
 
 mark_as_advanced(
