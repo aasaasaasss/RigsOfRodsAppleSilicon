@@ -274,7 +274,10 @@ expand_file_extensions(SOURCE_FILES ${SOURCE_FILES})
 
 if (APPLE)
     list(APPEND SOURCE_FILES MacOS.h MacOS.mm)
-    set_source_files_properties(MacOS.mm PROPERTIES COMPILE_FLAGS "-fno-objc-arc")
+    set_source_files_properties(MacOS.mm PROPERTIES
+        COMPILE_FLAGS "-fno-objc-arc"
+        SKIP_PRECOMPILE_HEADERS ON
+    )
 endif ()
 
 # Generate source groups for use in IDEs
