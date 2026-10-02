@@ -499,6 +499,12 @@ if (NOT WIN32)
     set(CFG_COMMENT_RENDERSYSTEM_D3D9 "# ")
 endif ()
 
+# NVIDIA's Cg program manager is not built for Apple Silicon; OpenGL uses
+# GLSL shaders there, so don't ask OGRE to load the optional Cg plugin.
+if (APPLE)
+    set(CFG_COMMENT_PLUGIN_CG "# ")
+endif ()
+
 if (WIN32)
     set(CFG_COMMENT_RENDERSYSTEM_GL "# ")
 endif ()

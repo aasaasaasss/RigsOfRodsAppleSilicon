@@ -117,6 +117,17 @@ jobs:
             "$recipe_dir/conanfile.py"
           grep -q 'defined(__i386__) || defined(__x86_64__)' \
             "$recipe_dir/conanfile.py"
+          # OGRE's legacy recipe propagates its optional NVIDIA Cg Toolkit
+          # dependency to consumers even when the Cg plugin is disabled.
+          # The toolkit only ships x86/Linux .so files, which cannot be linked
+          # into this arm64 macOS executable. The OpenGL renderer does not use
+          # the Cg program manager, so remove that optional requirement too.
+          perl -0pi -e 's~^\s*self\.requires\("cg-toolkit/[^\"]+"\)\s*\n~~m' \
+            "$recipe_dir/conanfile.py"
+          if grep -n 'cg-toolkit' "$recipe_dir/conanfile.py"; then
+            echo "OGRE Conan recipe still requires the unsupported Cg Toolkit"
+            exit 1
+          fi
 
       - name: Configure CMake
         shell: bash
