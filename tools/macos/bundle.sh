@@ -114,6 +114,22 @@ while IFS= read -r -d '' plugin; do
     esac
 done < <(find "$BUILD_DIR/bin" -maxdepth 2 -name '*.dylib' -type f -print0 2>/dev/null)
 
+# OGRE's plugins.cfg names plugins without their SONAME version, while Conan
+# stages versioned files such as RenderSystem_GL3Plus.1.11.6.dylib. Create the
+# unversioned loader names expected by OGRE (and keep versioned files for linking).
+while IFS= read -r -d '' plugin; do
+    plugin_file="$(basename "$plugin")"
+    plugin_stem="${plugin_file%.dylib}"
+    plugin_alias_stem="$plugin_stem"
+    while [[ "$plugin_alias_stem" =~ ^(.+)\.[0-9]+$ ]]; do
+        plugin_alias_stem="${BASH_REMATCH[1]}"
+    done
+    if [[ "$plugin_alias_stem" != "$plugin_stem" ]]; then
+        plugin_alias="$APP_DIR/Contents/PlugIns/${plugin_alias_stem}.dylib"
+        ln -sfn "$plugin_file" "$plugin_alias"
+    fi
+done < <(find "$APP_DIR/Contents/PlugIns" -maxdepth 1 -name '*.dylib' -type f -print0 2>/dev/null)
+
 echo "[4/7] $PLUGIN_COUNT OGRE plugin(s) staged into PlugIns/"
 
 # ──────────────────────────────────────────────────────────────────
