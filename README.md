@@ -1,3 +1,36 @@
+# Rigs of Rods — Apple Silicon
+
+**A native Apple Silicon port of [Rigs of Rods](https://github.com/RigsOfRods/rigs-of-rods) for modern Macs.**
+
+This project brings Rigs of Rods to Apple Silicon Macs as a **native ARM64 application**, with the goal of making the simulator run as a dedicated Mac game rather than brute forcing through emulation or translation overhead.
+
+These early iterations of the port are built around getting the original game running natively on Apple Silicon while preserving as much of the original as possible. The result is a surprisingly complete, highly performant port: simulation, physics, vehicles, input, audio, GUI, and multiplayer are  functional, with the remaining work focused primarily on graphics debugging and renderer overhaul.
+
+The project is evolving rapidly. Current work is focused on eliminating the remaining legacy graphics limitations and moving toward a **fully modern, Apple-native MetaltoMetal rendering architecture** eventually designed specifically for Apple Silicon that will also hopefully eliminate all graphical bugs in the process.
+
+This is an experimental, solo community dev project and is **not an official Rigs of Rods release**. It exists to explore just how far the simulator can be pushed as a native macOS application on modern Apple hardware since Macs have become extraordinarily powerful computers not fully optimized to take advantage of video games, especially of this stature.
+
+## Current Status
+
+The v0.2 build is already usable for testing and demonstrates the core simulator running natively on Apple Silicon. It is still an active work in progress, and visual compatibility, mod compatibility, and other edge cases are being developed now.
+
+For the latest builds, fixes, known issues, and development progress, see the [Releases](https://github.com/aasaasaasss/RigsOfRodsAppleSilicon/releases) page.
+
+## The Goal
+
+The long-term goal:
+
+**Make Rigs of Rods feel properly native on Apple Silicon.**
+
+That means taking advantage of the hardware and graphics APIs available on modern Macs instead of continuing to depend on legacy graphics paths designed for hardware generations long before Apple Silicon and its unbelievable single core speeds existed.
+
+
+
+
+
+
+
+
 ![release](https://flat.badgen.net/github/release/RigsOfRods/rigs-of-rods)
 ![contributors](https://flat.badgen.net/github/contributors/RigsOfRods/rigs-of-rods)
 ![last commit](https://flat.badgen.net/github/last-commit/RigsOfRods/rigs-of-rods)
