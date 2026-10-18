@@ -246,14 +246,40 @@ bool AppContext::SetUpRendering()
         Ogre::ConfigFile cfg;
         cfg.load(plugins_path);
         std::string plugin_dir = cfg.getSetting("PluginFolder", /*section=*/"", /*default=*/App::sys_process_dir->getStr());
-        Ogre::StringVector plugins = cfg.getMultiSetting("Plugin");
+        // ConfigFile::getMultiSetting() uses multimap::find(), which on libc++
+        // may return an arbitrary equivalent element and silently skip earlier
+        // duplicates (e.g. the first Plugin= line). Iterate the settings map
+        // instead so every plugin is loaded.
+        Ogre::StringVector plugins;
+        for (const auto& setting : cfg.getSettings())
+        {
+            if (setting.first == "Plugin")
+            {
+                plugins.push_back(setting.second);
+            }
+        }
+        {
+            std::string plugin_list;
+            for (const Ogre::String& name : plugins)
+            {
+                if (!plugin_list.empty()) plugin_list += ", ";
+                plugin_list += name;
+            }
+            LOG(fmt::format("[RoR|Startup|Rendering] Plugins ({}): {}", plugins.size(), plugin_list));
+        }
         for (Ogre::String plugin_filename: plugins)
         {
             try
             {
                 m_ogre_root->loadPlugin(PathCombine(plugin_dir, plugin_filename));
             }
-            catch (Ogre::Exception&) {} // Logged by OGRE
+            catch (Ogre::Exception& e)
+            {
+                // OGRE does not log plugin load failures when we catch them here;
+                // surface the reason instead of silently losing codecs/renderers.
+                LOG(fmt::format("[RoR|Startup|Rendering] Failed to load plugin '{}': {}",
+                    plugin_filename, e.getDescription()));
+            }
         }
     }
     catch (Ogre::Exception& e)

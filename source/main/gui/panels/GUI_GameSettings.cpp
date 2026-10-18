@@ -397,25 +397,12 @@ void GameSettings::DrawGraphicsSettings()
     DrawGCombo(App::gfx_flares_mode, _LC("GameSettings", "Light sources"),
         m_combo_items_light_sources.c_str());
 
-    DrawGCombo(App::gfx_shadow_type, _LC("GameSettings", "Shadow type (requires restart)"),
-        m_combo_items_shadow_type.c_str());
-
-    if (App::gfx_shadow_type->getEnum<GfxShadowType>() != GfxShadowType::NONE)
-    {
-        DrawGCheckbox(App::gfx_reduce_shadows, _LC("GameSettings", "Shadow optimizations"));
-        if (App::gfx_shadow_type->getEnum<GfxShadowType>() == GfxShadowType::PSSM)
-        {
-            DrawGIntSlider(App::gfx_shadow_quality, _LC("GameSettings", "Shadow quality"), 0, 3);
-        }
-    }
-
-    DrawGCombo(App::gfx_sky_mode, _LC("GameSettings", "Sky gfx"),
-        m_combo_items_sky_mode.c_str());
-
-    if (App::gfx_sky_mode->getEnum<GfxSkyMode>() != GfxSkyMode::SKYX)
-    {
-        DrawGIntSlider(App::gfx_sight_range, _LC("GameSettings", "Sight range (meters)"), 100, 5000);
-    }
+    // Shadows are permanently disabled on macOS. PSSM's terrain material
+    // generator is Cg-only, so exposing this setting can render the terrain
+    // white or make the game fail to start.
+    //
+    // SkyX is the only supported sky backend on Apple Silicon. Caelum is not
+    // shipped, so there is no safe alternative to expose here.
 
     DrawGCombo(App::gfx_texture_filter , _LC("GameSettings", "Texture filtering"),
         m_combo_items_tex_filter.c_str());

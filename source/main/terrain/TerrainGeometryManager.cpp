@@ -428,7 +428,9 @@ void TerrainGeometryManager::configureTerrainDefaults()
 
     TerrainGlobalOptions* terrainOptions = TerrainGlobalOptions::getSingletonPtr();
     std::string const & custom_mat = terrainManager->GetDef()->custom_material_name;
-    const bool useOpenGL = Root::getSingleton().getRenderSystem()->getName() == "OpenGL Rendering Subsystem";
+    const std::string renderSystemName = Root::getSingleton().getRenderSystem()->getName();
+    const bool useOpenGL = renderSystemName == "OpenGL Rendering Subsystem" ||
+                           renderSystemName == "OpenGL 3+ Rendering Subsystem";
     if (!custom_mat.empty())
     {
         terrainOptions->setDefaultMaterialGenerator(

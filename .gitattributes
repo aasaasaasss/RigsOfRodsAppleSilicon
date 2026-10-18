@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Vendored Conan recipes and their patch files must keep their exact line
+# endings (several upstream patches ship with CRLF); never normalize them.
+tools/macos/conan-recipes/** -text

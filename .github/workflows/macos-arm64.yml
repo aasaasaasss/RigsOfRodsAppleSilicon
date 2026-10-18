@@ -33,135 +33,23 @@ jobs:
         run: |
           brew install cmake ninja dylibbundler
 
-      - name: Build AngelScript
+      # tools/macos/build.sh owns the whole build:
+      #   1. builds + installs AngelScript from the pinned commit
+      #   2. seeds the Conan cache with the bundled, patched dependency
+      #      recipes (tools/macos/conan-recipes/*)
+      #   3. ensures the Conan profile carries the SDK path, legacy libc++
+      #      compatibility flags and Ogre CMake options this port needs
+      #   4. configures + builds Rigs of Rods
+      #   5. packages + ad-hoc signs RigsOfRods.app via tools/macos/bundle.sh
+      - name: Build & Bundle (reproducible macOS port)
         shell: bash
         run: |
-          git clone --depth 1 https://github.com/AnotherFoxGuy/angelscript.git angelscript
-          cmake -S angelscript -B angelscript/build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_STANDARD=11 \
-            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/angelscript"
-          cmake --build angelscript/build --parallel "$(sysctl -n hw.ncpu)"
-          cmake --install angelscript/build
-
-      - name: Install Conan 2
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install "conan>=2.0,<3"
-          conan --version
-
-      - name: Setup Conan profile and remotes
-        shell: bash
-        run: |
-          conan profile detect --force
-          # Legacy OIS, OGRE and PagedGeometry use C++17-removed libc++ APIs:
-          # unary_function/binary_function, binders and auto_ptr. Restore them
-          # for both C++ and Objective-C++ dependency builds.
-          # OGRE 1.11's framework path emits Xcode-only $(...) placeholders
-          # which modern Ninja rejects; Rigs of Rods packages dylibs instead.
-          # Pass the policy and options on CMake's command line as cache values:
-          # its legacy cmake_dependent_option() otherwise clears normal vars.
-          SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
-          printf '\n[conf]\ntools.apple:sdk_path=%s\ntools.build:cxxflags=["-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"]\ntools.cmake.cmaketoolchain:extra_variables={"CMAKE_OBJCXX_FLAGS_INIT":"-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION -D_LIBCPP_ENABLE_CXX17_REMOVED_BINDERS -D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR"}\ntools.cmake:configure_args=["-DCMAKE_POLICY_DEFAULT_CMP0077=NEW","-DOGRE_BUILD_LIBS_AS_FRAMEWORKS=OFF","-DOGRE_BUILD_PLUGIN_CG=OFF","-DOGRE_BUILD_RENDERSYSTEM_GL=OFF","-DOGRE_BUILD_RENDERSYSTEM_GL3PLUS=ON"]\n' \
-            "$SDK_PATH" >> "$HOME/.conan2/profiles/default"
-          conan remote add rigs-of-rods-deps \
-            "https://nexus.anotherfoxguy.com/repository/rigs-of-rods/" \
-            --force
-
-          conan remote list
-
-      - name: Patch legacy FreeImage source mirror
-        shell: bash
-        run: |
-          # SourceForge currently returns HTTP 522 for this archived release.
-          # Keep the existing recipe and patches, but fetch the identical 3.18.0
-          # release tree from the maintained MonoGame mirror instead.
-          conan download freeimage/3.18.0@anotherfoxguy/stable \
-            --remote rigs-of-rods-deps \
-            --only-recipe
-          recipe_dir="$(conan cache path freeimage/3.18.0@anotherfoxguy/stable)"
-          sed -i '' \
-            -e 's|http://downloads.sourceforge.net/project/freeimage/Source%20Distribution/3.18.0/FreeImage3180.zip|https://codeload.github.com/MonoGame/MonoGame.Mirror.FreeImage/zip/refs/tags/3.18.0|' \
-            -e 's|f41379682f9ada94ea7b34fe86bf9ee00935a3147be41b6569c9605a53e438fd|2ea4d07c0c88896d2f208a5e3648c026517894820465402698fea40bd7802b51|' \
-            "$recipe_dir/conandata.yml"
-
-      - name: Patch legacy libpng source mirror
-        shell: bash
-        run: |
-          # SourceForge also serves this archived libpng release unreliably.
-          # GitHub's official PNG Group tag has the same source tree, while
-          # retaining a .tar.gz suffix lets Conan select the correct unpacker.
-          conan download libpng/1.6.40 --remote conancenter --only-recipe
-          recipe_dir="$(conan cache path libpng/1.6.40)"
-          sed -i '' \
-            -e 's|https://sourceforge.net/projects/libpng/files/libpng16/1.6.40/libpng-1.6.40.tar.xz|https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.40.tar.gz|' \
-            -e 's|535b479b2467ff231a3ec6d92a525906fb8ef27978be4f66dbe05d3f3a01b3a1|62d25af25e636454b005c93cae51ddcd5383c40fa14aa3dae8f6576feb5692c2|' \
-            "$recipe_dir/conandata.yml"
-
-      - name: Preserve Conan SDK path in legacy OGRE recipe
-        shell: bash
-        run: |
-          conan download ogre3d/1.11.6.1@anotherfoxguy/stable \
-            --remote rigs-of-rods-deps \
-            --only-recipe
-          recipe_dir="$(conan cache path ogre3d/1.11.6.1@anotherfoxguy/stable)"
-          # OGRE 1.11 resets CMAKE_OSX_SYSROOT to the Xcode-only name "macosx"
-          # for Ninja. Preserve the full SDK path Conan gets from xcrun instead.
-          perl -0pi -e 's~        get\(self, \*\*self\.conan_data\["sources"\]\[self\.version\], strip_root=True\)\r?\n~        get(self, **self.conan_data["sources"][self.version], strip_root=True)\n        replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),\n                        "set(CMAKE_OSX_SYSROOT macosx)",\n                        "# CMake sysroot supplied by Conan toolchain")\n        replace_in_file(self, os.path.join(self.source_folder, "OgreMain/include/OgrePlatformInformation.h"),\n                        "#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE\\n#   define OGRE_CPU OGRE_CPU_X86",\n                        "#elif OGRE_PLATFORM == OGRE_PLATFORM_APPLE && (defined(__i386__) || defined(__x86_64__))\\n#   define OGRE_CPU OGRE_CPU_X86")\n~' \
-            "$recipe_dir/conanfile.py"
-          # OGRE 1.11's platform header treats every non-big-endian Apple
-          # target as x86 before it checks __aarch64__, enabling SSE on arm64.
-          # Restrict that legacy Apple fallback to actual Intel architectures.
-          grep -q 'CMake sysroot supplied by Conan toolchain' \
-            "$recipe_dir/conanfile.py"
-          grep -q 'defined(__i386__) || defined(__x86_64__)' \
-            "$recipe_dir/conanfile.py"
-          # OGRE's legacy recipe propagates its optional NVIDIA Cg Toolkit
-          # dependency to consumers even when the Cg plugin is disabled.
-          # The toolkit only ships x86/Linux .so files, which cannot be linked
-          # into this arm64 macOS executable. The OpenGL renderer does not use
-          # the Cg program manager, so remove that optional requirement too.
-          perl -0pi -e 's~^\s*self\.requires\("cg-toolkit/[^\"]+"\)\s*\n~~m' \
-            "$recipe_dir/conanfile.py"
-          if grep -n 'cg-toolkit' "$recipe_dir/conanfile.py"; then
-            echo "OGRE Conan recipe still requires the unsupported Cg Toolkit"
-            exit 1
-          fi
-
-      - name: Configure CMake
-        shell: bash
-        run: |
-          # Some transitive recipes (for example libpng 1.6.40) still
-          # declare cmake_minimum_required(VERSION 3.5). CMake 4 requires
-          # this compatibility floor when Conan builds those recipes.
-          export CMAKE_POLICY_VERSION_MINIMUM=3.5
-          cmake -B build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=cmake/conan_provider.cmake \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
-            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/angelscript" \
-            -DROR_USE_CAELUM=OFF
-
-      - name: Build
-        shell: bash
-        run: |
-          cmake --build build \
-            --config Release \
-            --parallel "$(sysctl -n hw.ncpu)"
-
-      - name: Package App Bundle
-        shell: bash
-        run: |
-          chmod +x tools/macos/bundle.sh
-          tools/macos/bundle.sh build
+          tools/macos/build.sh build-local
 
       - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: RigsOfRods-macOS-arm64
-          path: build/RigsOfRods.app
+          path: build-local/RigsOfRods.app
           compression-level: 9
           if-no-files-found: error

@@ -1,4 +1,15 @@
-import * from "shadows.material"
+abstract technique Shadows/managed/base_receiver
+{
+pass BaseRender
+{
+}
+}
+abstract technique Shadows/managed_transparent/base_receiver
+{
+pass BaseRender
+{
+}
+}
 import * from "texture_manager.material"
 
 material managed/flexmesh_standard/simple

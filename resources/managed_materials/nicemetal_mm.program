@@ -1,8 +1,16 @@
-vertex_program NiceMetal_VS_mm cg
+// GLSL replacements for the original Cg programs (Cg is unavailable on
+// Apple Silicon). Program names are kept identical so the material scripts
+// and ActorSpawner keep working without changes.
+//
+// Sampler units are declared explicitly with param_named (Ogre's legacy GL
+// renderer does not assign them automatically).  Each program must use a
+// single sampler type: Apple's GL rejects linking sampler2D and samplerCube
+// uniforms into one program, so the reflection passes use the 2D specular
+// map instead of the cube environment map.
+
+vertex_program NiceMetal_VS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_nicemetal_vp
-    profiles vs_1_1 arbvp1
+    source nicemetal_mm_vs.glsl
     default_params
     {
         param_named_auto worldviewproj worldviewproj_matrix
@@ -11,122 +19,117 @@ vertex_program NiceMetal_VS_mm cg
     }
 }
 
-fragment_program NiceMetal_PS_mm cg
+fragment_program NiceMetal_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_nicemetal_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
+        param_named Dmg_Diffuse_Map int 2
     }
 }
 
-fragment_program NiceMetal_transp_PS_mm cg
+fragment_program NiceMetal_transp_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_nicemetal_transp_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_transp.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
+        param_named Dmg_Diffuse_Map int 2
     }
 }
 
-fragment_program NiceMetal_PS_nodmg_mm cg
+fragment_program NiceMetal_PS_nodmg_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_nicemetal_fp_nodmg
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_nodmg.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
     }
 }
 
-fragment_program NiceMetal_transp_PS_nodmg_mm cg
+fragment_program NiceMetal_transp_PS_nodmg_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_nicemetal_fp_nodmg
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_transp_nodmg.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
     }
 }
 
-vertex_program NiceMetal_Reflect_VS_mm cg
+vertex_program NiceMetal_Reflect_VS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point reflect_nicemetal_vp
-    profiles vs_1_1 arbvp1
+    source nicemetal_mm_vs_reflect.glsl
     default_params
     {
-	  param_named_auto camPosition camera_position_object_space
-      param_named_auto world world_matrix
-      param_named_auto worldViewProj worldviewproj_matrix
-        //param_named_auto worldviewproj worldviewproj_matrix
-        //param_named_auto eyePositionW camera_position
-        //param_named_auto modelToWorld inverse_transpose_world_matrix
+        param_named_auto camPosition camera_position_object_space
+        param_named_auto world world_matrix
+        param_named_auto worldViewProj worldviewproj_matrix
     }
 }
 
-fragment_program NiceMetal_Reflect_PS_mm cg
+fragment_program NiceMetal_Reflect_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point reflect_nicemetal_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_reflect.glsl
     default_params
     {
+        param_named Specular_Map int 0
     }
 }
 
-fragment_program NiceMetal_Reflect_nocolor_PS_mm cg
+fragment_program NiceMetal_Reflect_nocolor_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point reflect_nicemetal_nocolor_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_reflect_nocolor.glsl
     default_params
     {
+        param_named Specular_Map int 0
     }
 }
 
-fragment_program SimpleMetal_PS_mm cg
+fragment_program SimpleMetal_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_simplemetal_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_simple.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
     }
 }
 
-fragment_program SimpleMetal_transp_PS_mm cg
+fragment_program SimpleMetal_transp_PS_mm glsl
 {
-    source nicemetal_mm.cg
-    entry_point main_simplemetal_transp_fp
-    profiles ps_2_0 arbfp1
+    source nicemetal_mm_fp_simple_transp.glsl
     default_params
     {
         param_named_auto lightDiffuse light_diffuse_colour 0
         param_named_auto lightSpecular light_specular_colour 0
         param_named exponent float 127
         param_named_auto ambient ambient_light_colour
+        param_named Diffuse_Map int 0
+        param_named Specular_Map int 1
     }
 }
