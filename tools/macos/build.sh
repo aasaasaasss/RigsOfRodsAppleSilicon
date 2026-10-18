@@ -114,6 +114,7 @@ cmake -S "$SCRIPT_DIR" -B "$SCRIPT_DIR/build" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
+    -DCMAKE_CXX_STANDARD=11 \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$SCRIPT_INSTALL"
 cmake --build "$SCRIPT_DIR/build" --parallel "$(sysctl -n hw.ncpu)"
