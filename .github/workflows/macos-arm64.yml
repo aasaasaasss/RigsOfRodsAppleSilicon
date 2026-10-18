@@ -33,6 +33,13 @@ jobs:
         run: |
           brew install cmake ninja dylibbundler
 
+      - name: Install Conan 2
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "conan>=2.0,<3"
+          conan --version
+
       # tools/macos/build.sh owns the whole build:
       #   1. builds + installs AngelScript from the pinned commit
       #   2. seeds the Conan cache with the bundled, patched dependency
