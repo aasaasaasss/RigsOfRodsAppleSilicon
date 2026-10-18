@@ -53,10 +53,21 @@ jobs:
         run: |
           tools/macos/build.sh build-local
 
+      # upload-artifact does not preserve symlinks: dylib/framework version
+      # links come out as full copies (~2x size) and the extracted bundle
+      # has ambiguous framework layouts. Zip the bundle ourselves with
+      # ditto, which preserves symlinks, resource forks and xattrs.
+      - name: Package App Bundle (symlink-preserving zip)
+        shell: bash
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            build-local/RigsOfRods.app RigsOfRods-macOS-arm64.zip
+          ls -lh RigsOfRods-macOS-arm64.zip
+
       - name: Upload App Bundle
         uses: actions/upload-artifact@v4
         with:
           name: RigsOfRods-macOS-arm64
-          path: build-local/RigsOfRods.app
-          compression-level: 9
+          path: RigsOfRods-macOS-arm64.zip
+          compression-level: 0
           if-no-files-found: error
