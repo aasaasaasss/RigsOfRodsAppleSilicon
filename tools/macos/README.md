@@ -15,8 +15,9 @@ The script does the following in order:
 1. Ensures the Conan profile carries the exact conf this port was built
    with (macOS SDK path, legacy libc++ compatibility flags for the old
    OIS/OGRE/PagedGeometry recipes, and the Ogre CMake options:
-   frameworks off, CG plugin off, GL renderer off, GL3+ on). The step is
-   idempotent and safe to re-run.
+   frameworks off, CG plugin off, legacy GL renderer on, GL3+ off —
+   the app loads `RenderSystem_GL`, per `deployment/plugins.cfg`). The
+   block is rewritten deterministically on every run.
 2. Registers the legacy Rigs-of-Rods dependency remote (for OIS & co.).
 3. Builds and installs AngelScript from the pinned upstream commit
    (`762ab03 — Update to 2.38.0`) into `.deps/angelscript-install`,
